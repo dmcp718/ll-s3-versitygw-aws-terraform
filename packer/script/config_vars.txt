@@ -1,0 +1,8 @@
+
+FILESPACE1="filespace.domain"
+FSUSER1="username"
+LLPASSWD1="password"
+ROOTPOINT1="/"
+MINIOROOTUSER="minio-root-user"
+MINIOROOTPASSWORD="minio-root-password"
+FQDOMAIN="example.net"
