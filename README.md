@@ -48,8 +48,8 @@ This template utilizes Packer to create a custom AMI with all software dependenc
    FSUSER1="username"
    LLPASSWD1="password"
    ROOTPOINT1="/"
-   MINIOROOTUSER="minio-root-user"
-   MINIOROOTPASSWORD="minio-root-password"
+   VGWROOTACCESSKEY="vgw-root-user"
+   VGWROOTSECRETKEY="vgw-root-secret"
    FQDOMAIN="example.net"
    ```
 4. Run the ll-s3-gw_ami_build_args.sh script:
@@ -126,9 +126,7 @@ This template utilizes Packer to create a custom AMI with all software dependenc
     terraform destroy
     ```
 > [!NOTE]
-> Open a web browser and go the web console URL with your configured domain for the S3 gateway, using port :8001, e.g., ``https://console.example.net:8001``
-> Enter the MINIOROOTUSER and MINIOROOTPASSWORD values you set during the packer AMI build step to login.
-> S3 clients can access the gateway at ``https://s3.example.net`` over standard TLS/SSL port 443.
+> S3 clients can access the gateway at the FQDOMAIN set during Packer AMI creation ``https://s3.<FQDOMAIN>`` over standard TLS/SSL port 443 with root access key and secret key credentials.
 
 ## License
 This project is licensed under the *MIT License* - see LICENSE.md file for details
