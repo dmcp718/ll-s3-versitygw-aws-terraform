@@ -126,7 +126,9 @@ This template utilizes Packer to create a custom AMI with all software dependenc
     terraform destroy
     ```
 > [!NOTE]
-> S3 clients can access the gateway at the FQDOMAIN set during Packer AMI creation ``https://s3.<FQDOMAIN>`` over standard TLS/SSL port 443 with root access key and secret key credentials.
+> S3 clients can access the gateway at the FQDOMAIN set during Packer AMI creation
+> ``https://s3.<FQDOMAIN>``
+> over standard TLS/SSL port 443 with root access key and secret key credentials.
 
 ## License
 This project is licensed under the *MIT License* - see LICENSE.md file for details
