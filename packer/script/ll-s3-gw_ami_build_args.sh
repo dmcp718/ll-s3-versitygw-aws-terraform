@@ -1,6 +1,6 @@
 #!/bin/bash
 
-##-- Script to build ec2 AMI for the deployment of Minio S3 gateway for a LucidLink Filespace
+##-- Script to build ec2 AMI for the deployment of Versity S3 gateway for a LucidLink Filespace
 . config_vars.txt
 ##-- Generate ec2 instance user data file
 mkdir -m 777 -p ../files
@@ -18,9 +18,6 @@ else
      echo -e "\e[91mError: write $USRDATAF permission denied.\e[0m"
      exit
 fi
-
-MINIOSERVERURL="https://s3.${FQDOMAIN}"
-MINIOBROWSRURL="https://console.${FQDOMAIN}"
 
 echo "FILESPACE1=${FILESPACE1}" > ../files/lucidlink-service-vars1.txt
 echo "FSUSER1=${FSUSER1}" >> ../files/lucidlink-service-vars1.txt
@@ -55,7 +52,7 @@ sudo wget -q https://www.lucidlink.com/download/latest/lin64/stable/ -O /s3-gw/l
 sudo wget -q https://amazoncloudwatch-agent.s3.amazonaws.com/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb -O /s3-gw/amazon-cloudwatch-agent.deb
 sudo dpkg -i -E /s3-gw/amazon-cloudwatch-agent.deb
 sudo mv /tmp/compose.yaml /s3-gw/compose.yaml
-sudo mv /tmp/minio1 /etc/default/minio1
+sudo mv /tmp/versitygw1 /etc/default/versitygw1
 sudo mv /tmp/lucidlink-service-vars1.txt /s3-gw/lucid/lucidlink-service-vars1.txt
 sudo mv /tmp/lucidlink-1.service /etc/systemd/system/lucidlink-1.service
 sudo mv /tmp/s3-gw.service /etc/systemd/system/s3-gw.service
@@ -68,7 +65,7 @@ shred -uz /tmp/lucidlink-password1.txt
 
 # Set permissions and update fuse.conf
 sudo mkdir /media/lucidlink/\${FILESPACE1}/
-sudo chown -R lucidlink:lucidlink /s3-gw/compose.yaml /etc/default/minio1 /s3-gw/lucid
+sudo chown -R lucidlink:lucidlink /s3-gw/compose.yaml /etc/default/versitygw1 /s3-gw/lucid
 sudo chmod 700 -R /s3-gw/lucid
 sudo chmod 400 /s3-gw/lucid/ll-password-1.cred
 sudo sed -i -e 's/#user_allow_other/user_allow_other/g' /etc/fuse.conf
@@ -96,7 +93,7 @@ sudo usermod -aG docker lucidlink
 sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-\$(uname -s)-\$(uname -m)" \
     -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
-sudo docker pull docker.io/minio/minio:RELEASE.2022-05-26T05-48-41Z
+sudo docker pull ghcr.io/versity/versitygw:latest
 sudo docker pull minio/sidekick
 # Remove LL and AWS installers
 sudo rm /s3-gw/lucidinstaller.deb && rm /s3-gw/amazon-cloudwatch-agent.deb
@@ -145,12 +142,10 @@ ExecStop=/bin/bash -c "docker compose -f /s3-gw/compose.yaml down"
 WantedBy=multi-user.target
 EOF
 
-# Create Minio config file
-cat >../files/minio1 <<EOF
-MINIO_ROOT_USER=$MINIOROOTUSER
-MINIO_ROOT_PASSWORD=$MINIOROOTPASSWORD
-MINIO_VOLUMES="/data"
-MINIO_SERVER_URL=$MINIOSERVERURL
+# Create versitygw env var file
+cat >../files/.env <<EOF
+ROOT_ACCESS_KEY=$VGWROOTACCESSKEY
+ROOT_SECRET_KEY=$VGWROOTSECRETKEY
 EOF
 
 # Create Docker Compose file
@@ -158,27 +153,20 @@ cat >../files/compose.yaml <<EOF
 services:
   sidekick-S3:
     image: minio/sidekick
-    restart: always    
+    restart: always
     depends_on:
-      - minio1
-      - minio2
-      - minio3
+      - vgw1
+      - vgw2
+      - vgw3
     ports:
       - "8000:8000"
-    command: [ "--insecure", "--health-path", "/minio/health/ready", "--address", ":8000", "http://minio{1...3}:9000" ]
-  sidekick-Console:
-    image: minio/sidekick
-    restart: always
-    depends_on:
-      - minio1
-    ports:
-      - "8001:8001"
-    command: [ "--insecure", "--health-path", "/minio/health/ready", "--address", ":8001", "http://minio1:9001" ]
-  minio1:
-    image: docker.io/minio/minio:RELEASE.2022-05-26T05-48-41Z
+    command: [ "--insecure", "--health-path", "/health", "--address", ":8000", "http://vgw{1...3}:9000" ]
+  vgw1:
+    image: ghcr.io/versity/versitygw:latest
     restart: always
     environment:
-      MINIO_CONFIG_ENV_FILE: "/etc/config.env"
+      - ROOT_ACCESS_KEY=${ROOT_ACCESS_KEY}
+      - ROOT_SECRET_KEY=${ROOT_SECRET_KEY}
     cap_add:
       - SYS_ADMIN
     devices:
@@ -186,17 +174,14 @@ services:
     security_opt:
       - "apparmor:unconfined"
     volumes:
-      - minio-data:/data
-      - /etc/default/minio1:/etc/config.env
       - /media/lucidlink:/media/lucidlink:shared
-    ports:
-      - "20091:9001"
-    command: [ "gateway", "nas", "/media/lucidlink", "--console-address", ":9001" ]
-  minio2:
-    image: docker.io/minio/minio:RELEASE.2022-05-26T05-48-41Z
+    command: [ "--port", ":9000", "--health", "/health", "posix", "/media/lucidlink" ]
+  vgw2:
+    image: ghcr.io/versity/versitygw:latest
     restart: always
     environment:
-      MINIO_CONFIG_ENV_FILE: "/etc/config.env"
+      - ROOT_ACCESS_KEY=${ROOT_ACCESS_KEY}
+      - ROOT_SECRET_KEY=${ROOT_SECRET_KEY}
     cap_add:
       - SYS_ADMIN
     devices:
@@ -204,17 +189,14 @@ services:
     security_opt:
       - "apparmor:unconfined"
     volumes:
-      - minio-data:/data
-      - /etc/default/minio1:/etc/config.env
       - /media/lucidlink:/media/lucidlink:shared
-    ports:
-      - "20092:9001"
-    command: [ "gateway", "nas", "/media/lucidlink"]
-  minio3:
-    image: docker.io/minio/minio:RELEASE.2022-05-26T05-48-41Z
+    command: [ "--port", ":9000", "--health", "/health", "posix", "/media/lucidlink" ]
+  vgw3:
+    image: ghcr.io/versity/versitygw:latest
     restart: always
     environment:
-      MINIO_CONFIG_ENV_FILE: "/etc/config.env"
+      - ROOT_ACCESS_KEY=${ROOT_ACCESS_KEY}
+      - ROOT_SECRET_KEY=${ROOT_SECRET_KEY}
     cap_add:
       - SYS_ADMIN
     devices:
@@ -222,14 +204,8 @@ services:
     security_opt:
       - "apparmor:unconfined"
     volumes:
-      - minio-data:/data
-      - /etc/default/minio1:/etc/config.env
       - /media/lucidlink:/media/lucidlink:shared
-    ports:
-      - "20093:9001"
-    command: [ "gateway", "nas", "/media/lucidlink"]
-volumes:
-  minio-data:
+    command: [ "--port", ":9000", "--health", "/health", "posix", "/media/lucidlink" ]
 EOF
 
 echo "EC2 instance build script created: $USRDATAF"

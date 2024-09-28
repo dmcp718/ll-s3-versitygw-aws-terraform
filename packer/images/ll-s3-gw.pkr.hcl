@@ -54,7 +54,7 @@ source "amazon-ebs" "ubuntu-minimal" {
       device_name             = "/dev/sdb"
       volume_size             = 100
       volume_type             = "gp3"
-      iops                    = 3000
+      iops                    = 12000
       throughput              = 500
   }
 }
@@ -70,7 +70,7 @@ build {
       "../files/lucidlink-1.service",
       "../files/lucidlink-service-vars1.txt",
       "../files/lucidlink-password1.txt",
-      "../files/minio1",
+      "../files/.env",
       "../files/s3-gw.service",
       "../files/compose.yaml"
     ]
