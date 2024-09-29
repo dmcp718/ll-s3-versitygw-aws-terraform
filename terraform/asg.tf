@@ -21,7 +21,7 @@ resource "aws_security_group_rule" "egress" {
 resource "aws_security_group_rule" "ingress" {
   type        = "ingress"
   from_port   = 8000
-  to_port     = 8001
+  to_port     = 8000
   protocol    = "-1"
   cidr_blocks = ["0.0.0.0/0"]
 
@@ -59,39 +59,7 @@ resource "aws_lb_target_group" "s3" {
 
   health_check {
     protocol            = "HTTP"
-    path = "/minio/health/live"
-    healthy_threshold   = 2
-    unhealthy_threshold = 2
-    interval            = 10
-  }
-}
-
-resource "aws_lb_listener" "web" {
-  load_balancer_arn = aws_lb.this.arn
-  port              = 8001
-  protocol          = "TLS"
-  ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
-  certificate_arn   = resource.aws_acm_certificate.main.arn
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.web.arn
-  }
-}
-
-resource "aws_lb_target_group" "web" {
-  name     = "${local.solution_name}--tg-${random_id.this.hex}"
-  port     = 8001
-  protocol = "TCP"
-  vpc_id   = module.vpc.vpc_id
-
-  stickiness {
-    type    = "source_ip"
-    enabled = true
-  }
-
-  health_check {
-    protocol            = "HTTP"
-    path = "/minio/health/live"
+    path = "/health"
     healthy_threshold   = 2
     unhealthy_threshold = 2
     interval            = 10
@@ -133,7 +101,7 @@ resource "aws_autoscaling_group" "this" {
   vpc_zone_identifier       = module.vpc.private_subnets
   health_check_grace_period = 1200
   health_check_type         = "ELB"
-  target_group_arns         = [aws_lb_target_group.s3.arn, aws_lb_target_group.web.arn]
+  target_group_arns         = [aws_lb_target_group.s3.arn]
 
   mixed_instances_policy {
     launch_template {

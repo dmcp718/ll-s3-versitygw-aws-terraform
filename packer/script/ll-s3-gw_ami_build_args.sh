@@ -51,6 +51,7 @@ sudo mkdir /s3-gw/lucid
 sudo wget -q https://www.lucidlink.com/download/latest/lin64/stable/ -O /s3-gw/lucidinstaller.deb && apt install /s3-gw/lucidinstaller.deb -y
 sudo wget -q https://amazoncloudwatch-agent.s3.amazonaws.com/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb -O /s3-gw/amazon-cloudwatch-agent.deb
 sudo dpkg -i -E /s3-gw/amazon-cloudwatch-agent.deb
+sudo mv /tmp/.env /s3-gw/.env
 sudo mv /tmp/compose.yaml /s3-gw/compose.yaml
 sudo mv /tmp/versitygw1 /etc/default/versitygw1
 sudo mv /tmp/lucidlink-service-vars1.txt /s3-gw/lucid/lucidlink-service-vars1.txt
@@ -165,8 +166,8 @@ services:
     image: ghcr.io/versity/versitygw:latest
     restart: always
     environment:
-      - ROOT_ACCESS_KEY=${ROOT_ACCESS_KEY}
-      - ROOT_SECRET_KEY=${ROOT_SECRET_KEY}
+      - ROOT_ACCESS_KEY=\${ROOT_ACCESS_KEY}
+      - ROOT_SECRET_KEY=\${ROOT_SECRET_KEY}
     cap_add:
       - SYS_ADMIN
     devices:
@@ -180,8 +181,8 @@ services:
     image: ghcr.io/versity/versitygw:latest
     restart: always
     environment:
-      - ROOT_ACCESS_KEY=${ROOT_ACCESS_KEY}
-      - ROOT_SECRET_KEY=${ROOT_SECRET_KEY}
+      - ROOT_ACCESS_KEY=\${ROOT_ACCESS_KEY}
+      - ROOT_SECRET_KEY=\${ROOT_SECRET_KEY}
     cap_add:
       - SYS_ADMIN
     devices:
@@ -195,8 +196,8 @@ services:
     image: ghcr.io/versity/versitygw:latest
     restart: always
     environment:
-      - ROOT_ACCESS_KEY=${ROOT_ACCESS_KEY}
-      - ROOT_SECRET_KEY=${ROOT_SECRET_KEY}
+      - ROOT_ACCESS_KEY=\${ROOT_ACCESS_KEY}
+      - ROOT_SECRET_KEY=\${ROOT_SECRET_KEY}
     cap_add:
       - SYS_ADMIN
     devices:

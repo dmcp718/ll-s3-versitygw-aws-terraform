@@ -72,7 +72,7 @@ This template utilizes Packer to create a custom AMI with all software dependenc
    ```
 6. Run packer build:
    ```sh
-   packer build ll-s3-gw.pkr.hcl
+   packer build -var-file="variables.auto.pkrvars.hcl" ll-s3-gw.pkr.hcl
    ```
 7. Copy the resulting ami_id value from the packer build, either from packer build terminal output or the post-processor script that generates the **ami_id.txt** file inside the /packer/images directory.
    ```sh

@@ -45,14 +45,3 @@ resource "aws_route53_record" "s3" {
     evaluate_target_health = true
   }
 }
-
-resource "aws_route53_record" "web" {
-  zone_id = data.aws_route53_zone.main.zone_id
-  name    = "console"
-  type    = "A"
-  alias {
-    name                   = aws_lb.this.dns_name
-    zone_id                = aws_lb.this.zone_id
-    evaluate_target_health = true
-  }
-}
